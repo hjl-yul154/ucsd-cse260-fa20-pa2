@@ -43,32 +43,31 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
         }
         __syncthreads();
         #pragma unroll
-        for (int k=0;k<BK;k++){
-//            #pragma unroll
-//            for (int i=0;i<TM;i++){
-//                frag_a[i]=Ab[ty+BY*i][k];
-//            }
-//            #pragma unroll
-//            for (int j=0;j<TN;j++){
-//                frag_b[j]=Bb[k][tx+BX*j];
-//            }
-//
+        for (int k=0;k<BK;++k){
             #pragma unroll
-            for (int i=0;i<TM;i++){
+            for (int i=0;i<TM;++i){
+                frag_a[i]=Ab[ty+BY*i][k];
+            }
+            #pragma unroll
+            for (int j=0;j<TN;++j){
+                frag_b[j]=Bb[k][tx+BX*j];
+            }
+
+            #pragma unroll
+            for (int i=0;i<TM;++i){
                 #pragma unroll
-                for (int j=0;j<TN;j++){
-//                    Cb[i][j]+=frag_a[i]*frag_b[j];
-                    Cb[i][j]+=Ab[ty+BY*i][k]*Bb[k][tx+BX*j];
+                for (int j=0;j<TN;++j){
+                    Cb[i][j]+=frag_a[i]*frag_b[j];
                 }
             }
         }
         __syncthreads();
     }
     #pragma unroll
-    for(int i=0;i<TM;i++){
+    for(int i=0;i<TM;++i){
         #pragma unroll
-        for(int j=0;j<TN;j++){
-            if(I+i*BY<N&&J+j*BX<N){
+        for(int j=0;j<TN;++j){
+            if(I+i*BY<N && J+j*BX<N){
                 C[(I+BY*i)*N+J+BX*j]=Cb[i][j];
             }
         }
@@ -91,11 +90,11 @@ __global__ void matMul_shared(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     int by = blockIdx.y, bx = blockIdx.x;
     int I = by*TW + ty; int J= bx*TW + tx;
     double Cij = 0;
-    for (int kk=0; kk<N/TW; kk++){
+    for (int kk=0; kk<N/TW; ++kk){
         As[ty][tx] = A[I*N + kk*TW+tx];
         Bs[ty][tx] = B[(kk*TW+ty)*N + J];
         __syncthreads();
-        for (int k=0; k<TW; k++)
+        for (int k=0; k<TW; ++k)
             Cij+= As[ty][k] * Bs[k][tx];
         __syncthreads();
     }
@@ -109,7 +108,7 @@ __global__ void matMul_naive(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     if((I < N) && (J < N)){
         _DOUBLE_ _c = 0;
-        for (unsigned int k = 0; k < N; k++) {
+        for (unsigned int k = 0; k < N; ++k) {
             _DOUBLE_ a = A[I * N + k];
             _DOUBLE_ b = B[k * N + J];
             _c += a * b;

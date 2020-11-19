@@ -13,8 +13,8 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     //local shared storage
     int TY = blockDim.y;
-    int TX = blockDIM.x;
-    int TW = blockDIM.x;
+    int TX = blockDim.x;
+    int TW = blockDim.x;
 
     __shared__ double As[TW][TW], Bs[TW][TW];
     int ty = threadIdx.y, tx = threadIdx.x;
@@ -22,30 +22,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     int I = by*TW + ty; int J= bx*TW + tx;
     double Cij = 0;
     for (int kk=0; kk<N/TW; kk++){
-        As[ty][tx] = A[(I*N + kk*TW+tx];
-        Bs[ty][tx] = B[(kk*TW+ty)*N + J];
-        __syncthreads();
-        for (int k=0; k<TW; k++)
-            Cij+= As[ty][k] * Bs[k][tx];
-        __syncthreads();
-    }
-    C[I*N + J] = Cij;
-}
-
-__global__ void matMul_old(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
-
-    //local shared storage
-    int TY = blockDim.y
-    int TX = blockDIM.x
-    int TW = blockDIM.x
-
-    __shared__ double As[TW][TW], Bs[TW][TW];
-    int ty = threadIdx.y, tx = threadIdx.x;
-    int by = blockIdx.y, bx = blockIdx.x;
-    int I = by*TW + ty; int J= bx*TW + tx;
-    double Cij = 0;
-    for (int kk=0; kk<N/TW; kk++){
-        As[ty][tx] = A[(I*N + kk*TW+tx];
+        As[ty][tx] = A[I*N + kk*TW+tx];
         Bs[ty][tx] = B[(kk*TW+ty)*N + J];
         __syncthreads();
         for (int k=0; k<TW; k++)

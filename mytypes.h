@@ -15,6 +15,11 @@
 #define BN BLOCKTILE_N
 #define TM THREADTILE_M
 #define TN THREADTILE_N
+#define TK 4
+#define TY TM/TK/BLOCKDIM_Y
+#define TX TN/TK/BLOCKDIM_X
+#define WY 8
+#define WX 4
 
 
 #endif

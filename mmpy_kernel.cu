@@ -62,6 +62,9 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     int I =  by*BM + ty;
     int J =  bx*BN + tx;
+    
+    int I0 = by * BLOCK_SIZE_M;
+    int J0 = bx * BLOCK_SIZE_N;
 
     #pragma unroll
     for(int K=0;K<N;K+=BK){

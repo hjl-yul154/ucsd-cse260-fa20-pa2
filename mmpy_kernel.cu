@@ -56,7 +56,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
         for (int i = 0; i < BLOCK_SIZE_M; i += BLOCKDIM_Y) {
 #pragma unroll
             for (int j = 0; j < BLOCK_SIZE_K; j += BLOCKDIM_X) {
-                Ab[ty + i][tx + j] = A_ELEMENT(I0 + ty + i, K + tx + j);
+                Ab[ty+i][tx+j]=get_mat(A,N,I+i,K+tx+j);
             }
         }
 
@@ -64,7 +64,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
         for (int i = 0; i < BLOCK_SIZE_K; i += BLOCKDIM_Y) {
 #pragma unroll
             for (int j = 0; j < BLOCK_SIZE_N; j += BLOCKDIM_X) {
-                Bb[ty + i][tx + j] = B_ELEMENT(K + ty + i, J0 + tx + j);
+                Bb[ty+i][tx+j]=get_mat(B,N,K+ty+i,J+j);
             }
         }
         __syncthreads();

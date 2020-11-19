@@ -95,7 +95,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
             for (int i=0;i<TM;++i){
                 #pragma unroll
                 for (int j=0;j<TN;++j){
-                    Cb[i][j]+=frag_a[i]*frag_b[j];
+                    c[i][j]+=frag_a[i]*frag_b[j];
                 }
             }
         }

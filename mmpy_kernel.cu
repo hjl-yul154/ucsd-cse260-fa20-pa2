@@ -11,7 +11,7 @@ using namespace std;
 
 #define get_mat(mat, N, i, j)((i) < N && (j) < N ? mat[(i)*N+(j)] : 0)
 
-__global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
+__global__ void matMul_cutlass(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     __shared__ _DOUBLE_ Ab[BM][BK];
     __shared__ _DOUBLE_ Bb[BK][BN];
     _DOUBLE_ frag_a[TM];
@@ -81,7 +81,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
 }
 
-__global__ void matMul_tiled(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
+__global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     __shared__ _DOUBLE_ Ab[BM][BK];
     __shared__ _DOUBLE_ Bb[BK][BN];
     _DOUBLE_ frag_a[TM];

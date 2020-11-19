@@ -9,12 +9,13 @@ using namespace std;
 
 #include <stdio.h>
 
+#define TW 16
 __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     //local shared storage
     int TY = blockDim.y;
     int TX = blockDim.x;
-    int TW = blockDim.x;
+//     int TW = blockDim.x;
 
     __shared__ _DOUBLE_ As[TW][TW];
     __shared__ _DOUBLE_ Bs[TW][TW];

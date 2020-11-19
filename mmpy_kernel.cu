@@ -25,26 +25,36 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     int I =  by*BM + ty;
     int J =  bx*BN + tx;
 
+    #pragma unroll
     for(int K=0;K<N;K+=BK){
+        #pragma unroll
         for(int i=0;i<BM;i+=BY){
+            #pragma unroll
             for(int j=0;j<BK;j+=BX){
                 Ab[ty+i][tx+j]=get_mat(A,N,I+i,K+tx+j);
             }
         }
+        #pragma unroll
         for(int i=0;i<BK;i+=BY){
+            #pragma unroll
             for(int j=0;j<BN;j+=BX){
                 Bb[ty+i][tx+j]=get_mat(B,N,K+ty+i,J+j);
             }
         }
         __syncthreads();
+        #pragma unroll
         for (int k=0;k<BK;k++){
+            #pragma unroll
             for (int i=0;i<TM;i++){
                 frag_a[i]=Ab[ty+BY*i][k];
             }
+            #pragma unroll
             for (int j=0;j<TN;j++){
                 frag_b[j]=Bb[k][tx+BX*j];
             }
+            #pragma unroll
             for (int i=0;i<TM;i++){
+                #pragma unroll
                 for (int j=0;j<TN;j++){
                     Cb[i][j]+=frag_a[i]*frag_b[j];
                 }
@@ -52,7 +62,9 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
         }
         __syncthreads();
     }
+    #pragma unroll
     for(int i=0;i<TM;i++){
+        #pragma unroll
         for(int j=0;j<TN;j++){
             if(I+i*BY<N&&J+j*BX<N){
                 C[(I+BY*i)*N+J+BX*j]=Cb[i][j];

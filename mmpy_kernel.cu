@@ -9,7 +9,7 @@ using namespace std;
 
 #include <stdio.h>
 
-#define get_mat(mat, N, i, j)(i < N && j < N ? mat[(i)*N+(j)] : 0)
+#define get_mat(mat, N, i, j)(i<N&&j<N?mat[i*N+j] : 0)
 
 __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     __shared__ _DOUBLE_ Ab[BM][BK];

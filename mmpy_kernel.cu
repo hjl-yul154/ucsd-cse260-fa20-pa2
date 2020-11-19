@@ -9,28 +9,6 @@ using namespace std;
 
 #include <stdio.h>
 
-#define BLOCK_SIZE_M 96
-#define BLOCK_SIZE_N 64
-#define BLOCK_SIZE_K 32
-#if BLOCK_SIZE_M % BLOCKDIM_Y || BLOCK_SIZE_K % BLOCKDIM_X
-#error Use thread block to load block of A
-#endif
-#if BLOCK_SIZE_K % BLOCKDIM_Y || BLOCK_SIZE_N % BLOCKDIM_X
-#error Use thread block to load block of B
-#endif
-#if BLOCK_SIZE_M % BLOCKDIM_Y || BLOCK_SIZE_N % BLOCKDIM_X
-#error Use thread block to compute block of C
-#endif
-// Number of sub-block of C for each thread
-#define X_SUB (BLOCK_SIZE_N / BLOCKDIM_X)
-#define Y_SUB (BLOCK_SIZE_M / BLOCKDIM_Y)
-
-#define MAT(mat, N, i, j) (mat[(i)*N + (j)])
-#define MAT_PADDED(mat, N, i, j) ((i) < N && (j) < N ? MAT(mat, N, i, j) : 0)
-#define A_ELEMENT(i, j) MAT_PADDED(A, N, i, j)
-#define B_ELEMENT(i, j) MAT_PADDED(B, N, i, j)
-#define C_ELEMENT(i, j) MAT(C, N, i, j)
-
 #define get_mat(mat, N, i, j)((i) < N && (j) < N ? mat[(i)*N+(j)] : 0)
 
 __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {

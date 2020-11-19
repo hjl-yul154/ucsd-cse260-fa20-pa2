@@ -155,8 +155,6 @@ __global__ void matMul_tiled(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 __global__ void matMul_shared(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     //local shared storage
-    int TY = blockDim.y;
-    int TX = blockDim.x;
 //     int TW = blockDim.x;
 
     __shared__ _DOUBLE_ As[TW][TW];

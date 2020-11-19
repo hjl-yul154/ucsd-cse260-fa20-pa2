@@ -9,7 +9,7 @@ using namespace std;
 
 #include <stdio.h>
 
-#define TW 16
+#define TW 32
 __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     //local shared storage

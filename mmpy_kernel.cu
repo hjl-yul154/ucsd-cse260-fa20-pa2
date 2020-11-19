@@ -31,7 +31,7 @@ using namespace std;
 #define B_ELEMENT(i, j) MAT_PADDED(B, N, i, j)
 #define C_ELEMENT(i, j) MAT(C, N, i, j)
 
-#define get_mat(mat,N,i,j)((i<N)&&(j<N)?mat[i*N+j]:0)
+#define get_mat(mat, N, i, j)((i) < N && (j) < N ? mat[(i)*N+(j)] : 0)
 
 __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     __shared__ _DOUBLE_ Ab[BM][BK];
@@ -56,7 +56,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
         for(int i=0;i<BM;i+=BY){
             #pragma unroll
             for(int j=0;j<BK;j+=BX){
-                Ab[ty + i][tx + j] = A_ELEMENT(I0 + ty + i, K + tx + j);
+                Ab[ty + i][tx + j] = get_mat(A,N,I + i, K + tx + j);
             }
         }
         #pragma unroll

@@ -2,7 +2,7 @@
 #define MYTYPES_H
 
 
-#define BLOCKTILE_M 64
+#define BLOCKTILE_M 128
 #define BLOCKTILE_N 64
 #define BLOCKTILE_K 32
 #define THREADTILE_M (BLOCKTILE_M/BLOCKDIM_Y)

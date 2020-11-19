@@ -19,13 +19,11 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     _DOUBLE_ Cb[TM][TN]={0};
 
 
-    int ty = threadIdx.y, tx=threadIdx.x;
+    int ty0 = threadIdx.y, tx0=threadIdx.x;
     int by = blockIdx.y, bx=blockIdx.x;
-    int w = (ty*BY+tx)/32;
-    int wy = w/(BX/WX), wx=w%(BX/WX);
-    int tyw = ((ty*BY+tx)%32)/WX, txw = ((ty*BY+tx)%32)%WX;
-    ty = wy*WY+tyw;
-    tx = wx*WX+txw;
+    
+    int ty = ((ty0*BY+tx0)/32)/(BX/WX)*WY+((ty0*BY+tx0)%32)/WX;
+    int tx = ((ty0*BY+tx0)/32)%(BX/WX)*WX+((ty0*BY+tx0)%32)%WX;
 
     int I =  by*BM + ty;
     int J =  bx*BN + tx;

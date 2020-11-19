@@ -1,88 +1,108 @@
+// ;-*- mode: c;-*-
 // Matrix multiply device code
 #include <assert.h>
 #include <math.h>
-#include "types.h"
 #include "utils.h"
+#include "types.h"
+#include "mytypes.h"
 using namespace std;
 
-#define BLOCK_SIZE_M 96
-#define BLOCK_SIZE_N 64
-#define BLOCK_SIZE_K 32
-#if BLOCK_SIZE_M % BLOCKDIM_Y || BLOCK_SIZE_K % BLOCKDIM_X
-#error Use thread block to load block of A
-#endif
-#if BLOCK_SIZE_K % BLOCKDIM_Y || BLOCK_SIZE_N % BLOCKDIM_X
-#error Use thread block to load block of B
-#endif
-#if BLOCK_SIZE_M % BLOCKDIM_Y || BLOCK_SIZE_N % BLOCKDIM_X
-#error Use thread block to compute block of C
-#endif
-// Number of sub-block of C for each thread
-#define X_SUB (BLOCK_SIZE_N / BLOCKDIM_X)
-#define Y_SUB (BLOCK_SIZE_M / BLOCKDIM_Y)
+#include <stdio.h>
 
-#define MAT(mat, N, i, j) (mat[(i)*N + (j)])
-#define MAT_PADDED(mat, N, i, j) ((i) < N && (j) < N ? MAT(mat, N, i, j) : 0)
-#define A_ELEMENT(i, j) MAT_PADDED(A, N, i, j)
-#define B_ELEMENT(i, j) MAT_PADDED(B, N, i, j)
-#define C_ELEMENT(i, j) MAT(C, N, i, j)
+#define get_mat(mat,N,i,j)((i<N)&&(j<N)?mat[i*N+j]:0)
 
-__global__ void matMul(int N, _DOUBLE_* C, _DOUBLE_* A, _DOUBLE_* B) {
-    __shared__ _DOUBLE_ Ab[BLOCK_SIZE_M][BLOCK_SIZE_K];
-    __shared__ _DOUBLE_ Bb[BLOCK_SIZE_K][BLOCK_SIZE_N];
+__global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
+    __shared__ _DOUBLE_ Ab[BM][BK];
+    __shared__ _DOUBLE_ Bb[BK][BN];
+    _DOUBLE_ frag_a[TM];
+    _DOUBLE_ frag_b[TN];
+    _DOUBLE_ Cb[TM][TN];
 
-    int bx = blockIdx.x, by = blockIdx.y;
-    int tx = threadIdx.x, ty = threadIdx.y;
 
-    _DOUBLE_ c[Y_SUB][X_SUB] = {0};  // Zero initialize the whole array
+    int ty = threadIdx.y, tx=threadIdx.x;
+    int by = blockIdx.y, bx=blockIdx.x;
 
-    // Compute I0,J0 of C
-    int I0 = by * BLOCK_SIZE_M;
-    int J0 = bx * BLOCK_SIZE_N;
+    int I =  by*BM + ty;
+    int J =  bx*BN + tx;
 
-#pragma unroll
-    for (int K = 0; K < N; K += BLOCK_SIZE_K) {
-#pragma unroll
-        for (int i = 0; i < BLOCK_SIZE_M; i += BLOCKDIM_Y) {
-#pragma unroll
-            for (int j = 0; j < BLOCK_SIZE_K; j += BLOCKDIM_X) {
-                Ab[ty + i][tx + j] = A_ELEMENT(I0 + ty + i, K + tx + j);
+    for(int K=0;K<N;K+=BK){
+        for(int i=0;i<BM;i+=BY){
+            for(int j=0;j<BK;j+=BX){
+                Ab[ty+i][tx+j]=get_mat(A,I+i,K+j);
             }
         }
-
-#pragma unroll
-        for (int i = 0; i < BLOCK_SIZE_K; i += BLOCKDIM_Y) {
-#pragma unroll
-            for (int j = 0; j < BLOCK_SIZE_N; j += BLOCKDIM_X) {
-                Bb[ty + i][tx + j] = B_ELEMENT(K + ty + i, J0 + tx + j);
+        for(int i=0;i<BK;j+=BY){
+            for(int j=0;i<BN;i+=BX){
+                Bb[ty+i][tx+j]=get_mat(B,K+i,J+j);
             }
         }
-
         __syncthreads();
-
-#pragma unroll
-        for (int k = 0; k < BLOCK_SIZE_K; ++k) {
-#pragma unroll
-            for (int i = 0; i < Y_SUB; ++i) {
-#pragma unroll
-                for (int j = 0; j < X_SUB; ++j) {
-                    c[i][j] +=
-                        Ab[ty + i * BLOCKDIM_Y][k] * Bb[k][tx + j * BLOCKDIM_X];
+        for (int k=0;k<BK;k++){
+            for (int i=0;i<TM;i++){
+                frag_a[i]=Ab[ty+TM*i][k];
+            }
+            for (int j=0;j<TN;j++){
+                frag_b[j]=Bb[k][tx+TN*j];
+            }
+            for (int i=0;i<TM;i++){
+                for (int j=0;j<TN;j++){
+                    Cb[i][j]+=frag_a[i]*frag_b[j];
                 }
             }
         }
-
         __syncthreads();
     }
-
-#pragma unroll
-    for (int i = 0; i < Y_SUB; ++i) {
-#pragma unroll
-        for (int j = 0; j < X_SUB; ++j) {
-            if (I0 + ty + i * BLOCKDIM_Y < N && J0 + tx + j * BLOCKDIM_X < N) {
-                C_ELEMENT(I0 + ty + i * BLOCKDIM_Y, J0 + tx + j * BLOCKDIM_X) =
-                    c[i][j];
+    for(int i=0;i<TM;i++){
+        for(int j=0;j<TN;j++){
+            if(I+i*BY<N&&J+j*BX<N){
+                get_mat(C,I+BY*i,J+BX*j)=Cb[i][j]
             }
         }
     }
+
 }
+
+
+#define TW 16
+__global__ void matMul_shared(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
+
+    //local shared storage
+    int TY = blockDim.y;
+    int TX = blockDim.x;
+//     int TW = blockDim.x;
+
+    __shared__ _DOUBLE_ As[TW][TW];
+    __shared__ _DOUBLE_ Bs[TW][TW];
+    int ty = threadIdx.y, tx = threadIdx.x;
+    int by = blockIdx.y, bx = blockIdx.x;
+    int I = by*TW + ty; int J= bx*TW + tx;
+    double Cij = 0;
+    for (int kk=0; kk<N/TW; kk++){
+        As[ty][tx] = A[I*N + kk*TW+tx];
+        Bs[ty][tx] = B[(kk*TW+ty)*N + J];
+        __syncthreads();
+        for (int k=0; k<TW; k++)
+            Cij+= As[ty][k] * Bs[k][tx];
+        __syncthreads();
+    }
+    C[I*N + J] = Cij;
+}
+
+__global__ void matMul_naive(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
+
+    int I =  blockIdx.y*blockDim.y + threadIdx.y;
+    int J =  blockIdx.x*blockDim.x + threadIdx.x;
+
+    if((I < N) && (J < N)){
+        _DOUBLE_ _c = 0;
+        for (unsigned int k = 0; k < N; k++) {
+            _DOUBLE_ a = A[I * N + k];
+            _DOUBLE_ b = B[k * N + J];
+            _c += a * b;
+        }
+        C[I * N + J] = _c;
+    }
+}
+
+
+

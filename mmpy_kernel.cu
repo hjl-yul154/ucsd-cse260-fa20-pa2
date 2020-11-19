@@ -9,6 +9,66 @@ using namespace std;
 
 #include <stdio.h>
 
+__global__ void matMul(int N, _DOUBLE_* C, _DOUBLE_* A, _DOUBLE_* B) {
+    __shared__ _DOUBLE_ Ab[BLOCK_SIZE_M][BLOCK_SIZE_K];
+    __shared__ _DOUBLE_ Bb[BLOCK_SIZE_K][BLOCK_SIZE_N];
+
+    int bx = blockIdx.x, by = blockIdx.y;
+    int tx = threadIdx.x, ty = threadIdx.y;
+
+    _DOUBLE_ c[Y_SUB][X_SUB] = {0};  // Zero initialize the whole array
+
+    // Compute I0,J0 of C
+    int I0 = by * BLOCK_SIZE_M;
+    int J0 = bx * BLOCK_SIZE_N;
+
+#pragma unroll
+    for (int K = 0; K < N; K += BLOCK_SIZE_K) {
+#pragma unroll
+        for (int i = 0; i < BLOCK_SIZE_M; i += BLOCKDIM_Y) {
+#pragma unroll
+            for (int j = 0; j < BLOCK_SIZE_K; j += BLOCKDIM_X) {
+                Ab[ty + i][tx + j] = A_ELEMENT(I0 + ty + i, K + tx + j);
+            }
+        }
+
+#pragma unroll
+        for (int i = 0; i < BLOCK_SIZE_K; i += BLOCKDIM_Y) {
+#pragma unroll
+            for (int j = 0; j < BLOCK_SIZE_N; j += BLOCKDIM_X) {
+                Bb[ty + i][tx + j] = B_ELEMENT(K + ty + i, J0 + tx + j);
+            }
+        }
+
+        __syncthreads();
+
+#pragma unroll
+        for (int k = 0; k < BLOCK_SIZE_K; ++k) {
+#pragma unroll
+            for (int i = 0; i < Y_SUB; ++i) {
+#pragma unroll
+                for (int j = 0; j < X_SUB; ++j) {
+                    c[i][j] +=
+                        Ab[ty + i * BLOCKDIM_Y][k] * Bb[k][tx + j * BLOCKDIM_X];
+                }
+            }
+        }
+
+        __syncthreads();
+    }
+
+#pragma unroll
+    for (int i = 0; i < Y_SUB; ++i) {
+#pragma unroll
+        for (int j = 0; j < X_SUB; ++j) {
+            if (I0 + ty + i * BLOCKDIM_Y < N && J0 + tx + j * BLOCKDIM_X < N) {
+                C_ELEMENT(I0 + ty + i * BLOCKDIM_Y, J0 + tx + j * BLOCKDIM_X) =
+                    c[i][j];
+            }
+        }
+    }
+}
+
 __global__ void matMul_old(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     //local shared storage

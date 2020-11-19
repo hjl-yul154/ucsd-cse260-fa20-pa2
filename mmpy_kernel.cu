@@ -83,22 +83,14 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
             }
         }
         __syncthreads();
-        #pragma unroll
-        for (int k=0;k<BK;++k){
-            #pragma unroll
-            for (int i=0;i<TM;++i){
-                frag_a[i]=Ab[ty+BY*i][k];
-            }
-            #pragma unroll
-            for (int j=0;j<TN;++j){
-                frag_b[j]=Bb[k][tx+BX*j];
-            }
-
-            #pragma unroll
-            for (int i=0;i<TM;++i){
-                #pragma unroll
-                for (int j=0;j<TN;++j){
-                    c[i][j]+=frag_a[i]*frag_b[j];
+#pragma unroll
+        for (int k = 0; k < BLOCK_SIZE_K; ++k) {
+#pragma unroll
+            for (int i = 0; i < Y_SUB; ++i) {
+#pragma unroll
+                for (int j = 0; j < X_SUB; ++j) {
+                    c[i][j] +=
+                        Ab[ty + i * BLOCKDIM_Y][k] * Bb[k][tx + j * BLOCKDIM_X];
                 }
             }
         }

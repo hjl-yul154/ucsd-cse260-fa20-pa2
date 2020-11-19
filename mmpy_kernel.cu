@@ -66,20 +66,21 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     int I0 = by * BLOCK_SIZE_M;
     int J0 = bx * BLOCK_SIZE_N;
 
-    #pragma unroll
-    for(int K=0;K<N;K+=BK){
-        #pragma unroll
-        for(int i=0;i<BM;i+=BY){
-            #pragma unroll
-            for(int j=0;j<BK;j+=BX){
-                Ab[ty+i][tx+j]=get_mat(A,N,I+i,K+tx+j);
+#pragma unroll
+    for (int K = 0; K < N; K += BLOCK_SIZE_K) {
+#pragma unroll
+        for (int i = 0; i < BLOCK_SIZE_M; i += BLOCKDIM_Y) {
+#pragma unroll
+            for (int j = 0; j < BLOCK_SIZE_K; j += BLOCKDIM_X) {
+                Ab[ty + i][tx + j] = A_ELEMENT(I0 + ty + i, K + tx + j);
             }
         }
-        #pragma unroll
-        for(int i=0;i<BK;i+=BY){
-            #pragma unroll
-            for(int j=0;j<BN;j+=BX){
-                Bb[ty+i][tx+j]=get_mat(B,N,K+ty+i,J+j);
+
+#pragma unroll
+        for (int i = 0; i < BLOCK_SIZE_K; i += BLOCKDIM_Y) {
+#pragma unroll
+            for (int j = 0; j < BLOCK_SIZE_N; j += BLOCKDIM_X) {
+                Bb[ty + i][tx + j] = B_ELEMENT(K + ty + i, J0 + tx + j);
             }
         }
         __syncthreads();

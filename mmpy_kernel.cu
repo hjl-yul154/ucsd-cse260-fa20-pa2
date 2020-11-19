@@ -16,7 +16,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     __shared__ _DOUBLE_ Bb[BK][BN];
     _DOUBLE_ frag_a[TM];
     _DOUBLE_ frag_b[TN];
-    _DOUBLE_ Cb[TM][TN];
+    _DOUBLE_ Cb[TM][TN]={0};
 
 
     int ty = threadIdx.y, tx=threadIdx.x;

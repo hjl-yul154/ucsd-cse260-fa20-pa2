@@ -9,10 +9,7 @@ using namespace std;
 
 #include <stdio.h>
 
-<<<<<<< HEAD
-#define TW 32
 __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
-=======
 #define BLOCK_SIZE_M 96
 #define BLOCK_SIZE_N 64
 #define BLOCK_SIZE_K 32
@@ -98,7 +95,6 @@ __global__ void matMul(int N, _DOUBLE_* C, _DOUBLE_* A, _DOUBLE_* B) {
 
 #define TW 16
 __global__ void matMul_1(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
->>>>>>> 1523a3a39ed65c344e1867b471d7d070ae7dc3a5
 
     //local shared storage
     int TY = blockDim.y;

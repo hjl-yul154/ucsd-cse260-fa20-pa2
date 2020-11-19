@@ -31,7 +31,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
                 Ab[ty+i][tx+j]=get_mat(A,N,I+i,K+j);
             }
         }
-        for(int i=0;i<BK;j+=BY){
+        for(int i=0;i<BK;i+=BY){
             for(int j=0;i<BN;i+=BX){
                 Bb[ty+i][tx+j]=get_mat(B,N,K+i,J+j);
             }
@@ -55,7 +55,7 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     for(int i=0;i<TM;i++){
         for(int j=0;j<TN;j++){
             if(I+i*BY<N&&J+j*BX<N){
-                get_mat(C,N,I+BY*i,J+BX*j)=Cb[i][j]
+                C[(I+BY*i)*N+J+BX*j]=Cb[i][j];
             }
         }
     }

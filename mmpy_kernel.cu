@@ -28,8 +28,6 @@ __global__ void matMul_cutlass(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     int I =  by*BM + ty;
     int J =  bx*BN + tx;
 
-    int I0 = by * BM;
-    int J0 = bx * BN;
 
     #pragma unroll
     for(int K=0; K<N; K+=BK){
@@ -95,9 +93,6 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
     int I =  by*BM + ty;
     int J =  bx*BN + tx;
 
-    int I0 = by * BM;
-    int J0 = bx * BN;
-
     #pragma unroll
     for(int K=0; K<N; K+=BK){
         #pragma unroll
@@ -148,29 +143,35 @@ __global__ void matMul(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
 }
 
-
-#define TW 16
 __global__ void matMul_shared(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
     //local shared storage
 //     int TW = blockDim.x;
 
-    __shared__ _DOUBLE_ As[TW][TW];
-    __shared__ _DOUBLE_ Bs[TW][TW];
-    int ty = threadIdx.y, tx = threadIdx.x;
-    int by = blockIdx.y, bx = blockIdx.x;
-    int I = by*TW + ty; int J= bx*TW + tx;
-    double Cij = 0;
-    for (int kk=0; kk<N/TW; kk++){
-        As[ty][tx] = A[I*N + kk*TW+tx];
-        Bs[ty][tx] = B[(kk*TW+ty)*N + J];
+    __shared__ _DOUBLE_ Ab[BY][BK];
+    __shared__ _DOUBLE_ Bb[BK][BX];
+
+
+    int ty = threadIdx.y, tx=threadIdx.x;
+    int by = blockIdx.y, bx=blockIdx.x;
+
+    int I =  by*BY + ty;
+    int J =  bx*BX + tx;
+
+    _DOUBLE_ Cij = 0;
+
+    for(int K=0; K<N; K+=BK){
+        Ab[ty][tx] = get_mat(A,N,I, K + tx);
+        Bb[ty][tx]=get_mat(B,N,K+ty,J);
         __syncthreads();
-        for (int k=0; k<TW; k++)
-            Cij+= As[ty][k] * Bs[k][tx];
+        for (int k=0; k<BK; k++){
+            Cij+= Ab[ty][k] * Bb[k][tx];
+        }
         __syncthreads();
     }
     C[I*N + J] = Cij;
 }
+
 
 __global__ void matMul_naive(int N, _DOUBLE_ *C, _DOUBLE_ *A, _DOUBLE_ *B) {
 
